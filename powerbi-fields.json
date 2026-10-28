@@ -1,0 +1,70 @@
+{
+  "dataset": "SalesPulseStream",
+  "historicDataAnalysis": true,
+  "fields": [
+    {
+      "name": "EventTime",
+      "type": "DateTime"
+    },
+    {
+      "name": "ChangeType",
+      "type": "Text"
+    },
+    {
+      "name": "RecordId",
+      "type": "Text"
+    },
+    {
+      "name": "OrderTime",
+      "type": "DateTime"
+    },
+    {
+      "name": "Region",
+      "type": "Text"
+    },
+    {
+      "name": "Category",
+      "type": "Text"
+    },
+    {
+      "name": "Product",
+      "type": "Text"
+    },
+    {
+      "name": "Status",
+      "type": "Text"
+    },
+    {
+      "name": "UpdatedBy",
+      "type": "Text"
+    },
+    {
+      "name": "Orders",
+      "type": "Number"
+    },
+    {
+      "name": "Quantity",
+      "type": "Number"
+    },
+    {
+      "name": "UnitPrice",
+      "type": "Number"
+    },
+    {
+      "name": "TotalSales",
+      "type": "Number"
+    },
+    {
+      "name": "Completed",
+      "type": "Number"
+    },
+    {
+      "name": "Rated",
+      "type": "Number"
+    },
+    {
+      "name": "RatingSum",
+      "type": "Number"
+    }
+  ]
+}

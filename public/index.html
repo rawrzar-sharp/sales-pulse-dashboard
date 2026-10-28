@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sales Pulse — Live Dashboard</title>
+  <meta name="description" content="Real-time, multi-user sales dashboard with an embedded Power BI report.">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234F8BF9'/%3E%3Cpath d='M10 40l12-12 10 8 22-20' stroke='white' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>try{var t=localStorage.getItem("dash.theme");if(!t)t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--c1)"/><path d="M10 40l12-12 10 8 22-20" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><strong>Sales Pulse</strong><small id="modeLabel">connecting…</small></div>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="Dashboard sections">
+      <button role="tab" id="tab-overview" aria-controls="view-overview" aria-selected="true" data-view="overview">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9zm0 7h6v-5H4v5zm10 0h6v-9h-6v9zm0-16v5h6V4h-6z"/></svg><span>Overview</span></button>
+      <button role="tab" id="tab-bi" aria-controls="view-bi" aria-selected="false" tabindex="-1" data-view="bi">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 2h2v5h-2zM11 17h2v5h-2zM2 11h5v2H2zM17 11h5v2h-5zM11 8h2v3h3v2h-3v3h-2v-3H8v-2h3z"/></svg><span>Power BI</span></button>
+      <button role="tab" id="tab-data" aria-controls="view-data" aria-selected="false" tabindex="-1" data-view="data">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v3H3zM3 10.5h18v3H3zM3 16h18v3H3z"/></svg><span>Data</span></button>
+    </nav>
+
+    <div class="actions">
+      <span class="pill" id="livePill" title="Connection status"><i class="dot"></i><span id="liveText">…</span></span>
+      <button class="btn ghost" id="simBtn" aria-pressed="false" title="Adds a random order every few seconds so you can watch everything update"><span class="ico">▶</span><span class="lbl">Simulate</span></button>
+      <button class="btn ghost" id="nameBtn" title="Change your display name"><span class="avatar" id="avatar">?</span><span class="lbl" id="nameLbl">Guest</span></button>
+      <button class="btn ghost icon" id="themeBtn" aria-label="Toggle light/dark theme" title="Toggle theme">◐</button>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <!-- ============ OVERVIEW ============ -->
+    <section id="view-overview" class="view active" role="tabpanel" aria-labelledby="tab-overview">
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Date range">
+          <button data-range="7">7D</button><button data-range="30">30D</button><button data-range="60">60D</button><button data-range="all" class="on">All</button>
+        </div>
+        <div class="active-filters" id="activeFilters" aria-live="polite"></div>
+        <span class="hint" id="rangeHint"></span>
+      </div>
+
+      <div class="kpis" id="kpis">
+        <article class="kpi" data-k="sales"><h3>Total sales</h3><div class="num" id="k-sales">–</div><p>Quantity × unit price</p></article>
+        <article class="kpi" data-k="orders"><h3>Orders</h3><div class="num" id="k-orders">–</div><p>Records in view</p></article>
+        <article class="kpi" data-k="aov"><h3>Avg order value</h3><div class="num" id="k-aov">–</div><p>Sales ÷ orders</p></article>
+        <article class="kpi" data-k="completion"><h3>Completion rate</h3><div class="num" id="k-completion">–</div><p>Completed ÷ orders</p></article>
+        <article class="kpi" data-k="rating"><h3>Avg rating</h3><div class="num" id="k-rating">–</div><p id="k-rating-sub">Completed orders only</p></article>
+      </div>
+
+      <div class="grid">
+        <article class="card wide"><div class="card-h"><h2>Sales trend</h2><span class="sub">Daily total · hover or drag a finger across the line</span></div><div id="ch-trend"></div></article>
+        <article class="card"><div class="card-h"><h2>Sales by region</h2><span class="sub">Tap a bar to filter</span></div><div id="ch-region"></div></article>
+        <article class="card"><div class="card-h"><h2>Sales by category</h2><span class="sub">Tap a slice to filter</span></div><div id="ch-category"></div></article>
+        <article class="card"><div class="card-h"><h2>Order status</h2><span class="sub">Orders · tap to filter</span></div><div id="ch-status"></div></article>
+        <article class="card"><div class="card-h"><h2>Top products</h2><span class="sub">By sales</span></div><div id="ch-product"></div></article>
+        <article class="card span2 integrity"><div class="card-h"><h2>Data integrity</h2><span class="sub" id="integritySum"></span></div><ul id="integrity"></ul></article>
+      </div>
+    </section>
+
+    <!-- ============ POWER BI ============ -->
+    <section id="view-bi" class="view" role="tabpanel" aria-labelledby="tab-bi" hidden>
+      <div class="notice" role="note">
+        <strong>About this view.</strong> The Power BI report has its own data model, so it does <u>not</u> change when you edit rows in this site.
+        Your editable, live data is on the <button class="linklike" data-goto="overview">Overview</button> and <button class="linklike" data-goto="data">Data</button> tabs. Use the export panel to feed the same rows into Power BI.
+      </div>
+      <div class="tableau-layout">
+        <article class="card tableau-card">
+          <div class="card-h"><h2>Power BI report</h2>
+            <a class="btn ghost sm" id="biOpen" target="_blank" rel="noopener" href="#">Open in Power BI ↗</a></div>
+          <div id="biHost" class="tableau-host bi-host" hidden></div>
+          <div id="biSetup" class="bi-setup">
+            <h3>Your link is a <em>share</em> link, not an <em>embed</em> link</h3>
+            <p>Power BI share links (<code>app.powerbi.com/links/…</code>) open the full Power BI app and require a Microsoft sign-in, so browsers refuse to show them inside another website. To display the report here, paste an <b>embed URL</b>:</p>
+            <ol class="steps">
+              <li><b>Public report:</b> in Power BI → File → Embed report → <i>Publish to web (public)</i> → copy the link that starts with <code>https://app.powerbi.com/view?r=</code>. <small>Anyone with the link can see the data, and your admin must allow it.</small></li>
+              <li><b>Private report:</b> File → Embed report → <i>Website or portal</i> → copy the link starting with <code>https://app.powerbi.com/reportEmbed?</code>. Viewers sign in with a Microsoft account that has access.</li>
+            </ol>
+            <div class="bi-form">
+              <label class="sr" for="biUrl">Power BI embed URL</label>
+              <input id="biUrl" type="url" inputmode="url" placeholder="https://app.powerbi.com/view?r=…" autocomplete="off">
+              <button class="btn primary" id="biSave" type="button">Show report</button>
+            </div>
+            <p class="form-err" id="biErr" role="alert" hidden></p>
+          </div>
+          <p class="bi-foot" id="biFoot" hidden><button class="linklike" id="biChange" type="button">Change embed URL</button> · The report not showing? Some embed links need you to sign in to Microsoft in this browser first.</p>
+        </article>
+        <aside class="export-col">
+        <div class="card push-card">
+          <div class="card-h"><h2>Live push to Power BI</h2><span class="pill"><i class="dot" id="pushDot"></i><span>status</span></span></div>
+          <p id="pushStatus" class="push-status">Checking…</p>
+          <p class="sub">Every add / edit / delete is sent to your Power BI streaming dataset within ~1 s, whoever made it and however they connected (localhost or Cloudflare). See <b>POWERBI_LIVE_SETUP.md</b> for the 5-minute setup.</p>
+        </div>
+        <div class="card export-card">
+          <div class="card-h"><h2>Use this data in Power BI</h2></div>
+          <ol class="steps">
+            <li>Download the CSV below, or with the server running use the live address <code id="csvUrl">/api/export.csv</code>.</li>
+            <li>In <b>Power BI Desktop</b>: Get data → <i>Text/CSV</i> (file) or <i>Web</i> (the live address, via your Cloudflare link).</li>
+            <li>After edits here, click <i>Refresh</i>. In the Power BI service, scheduled refresh runs a few times a day; true live tiles need a streaming or push dataset.</li>
+          </ol>
+          <button class="btn primary block" id="exportBtn"><span>⬇ Download CSV (<span id="exportRows">0</span> rows)</span></button>
+          <dl class="mini"><dt>Columns</dt><dd>13 · Timestamp, Date, Region, Category, Product, Qty, Price, Total, Status, Rating…</dd><dt>Always matches</dt><dd>the table on the Data tab</dd><dt>Also works in</dt><dd>Tableau, Excel, Google Sheets</dd></dl>
+        </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ DATA ============ -->
+    <section id="view-data" class="view" role="tabpanel" aria-labelledby="tab-data" hidden>
+      <div class="toolbar">
+        <label class="search"><span class="sr">Search records</span>
+          <input id="search" type="search" placeholder="Search id, region, product, status, user…" autocomplete="off"></label>
+        <button class="btn primary" id="addBtn">＋ Add record</button>
+        <button class="btn ghost" id="randBtn" title="Insert one random order">🎲 Random</button>
+        <button class="btn ghost" id="batchBtn" title="Insert a set of 20 random orders at once">🎲 Add 20</button>
+        <button class="btn ghost" id="resetBtn" title="Restore the original 60 demo rows">↺ Reset demo</button>
+        <span class="hint" id="rowCount"></span>
+      </div>
+      <div class="table-wrap card">
+        <table id="tbl">
+          <thead><tr>
+            <th data-sort="id">ID</th><th data-sort="timestamp">Timestamp</th><th data-sort="region">Region</th><th data-sort="category">Category</th>
+            <th data-sort="product">Product</th><th data-sort="quantity" class="r">Qty</th><th data-sort="unitPrice" class="r">Unit price</th>
+            <th data-sort="total" class="r">Total</th><th data-sort="status">Status</th><th data-sort="rating" class="r">Rating</th><th data-sort="updatedBy">By</th><th class="r">Edit</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="empty-row" id="tblEmpty" hidden>No records match your search.</div>
+      </div>
+      <button class="btn ghost block" id="moreBtn" hidden>Show more</button>
+    </section>
+  </main>
+
+  <!-- ============ dialogs ============ -->
+  <dialog id="editor" aria-labelledby="edTitle">
+    <form method="dialog" id="edForm" novalidate>
+      <h2 id="edTitle">Add record</h2>
+      <div class="fields">
+        <label>Date &amp; time<input type="datetime-local" step="1" id="f-timestamp" required></label>
+        <label>Region<select id="f-region"></select></label>
+        <label>Category<select id="f-category"></select></label>
+        <label>Product<select id="f-product"></select></label>
+        <label>Quantity<input type="number" id="f-quantity" min="1" max="1000" step="1" inputmode="numeric" required></label>
+        <label>Unit price (IDR)<input type="number" id="f-unitPrice" min="1000" step="1000" inputmode="numeric" required></label>
+        <label>Status<select id="f-status"></select></label>
+        <label>Rating<select id="f-rating"></select></label>
+      </div>
+      <div class="total-preview">Total: <strong id="edTotal">Rp 0</strong></div>
+      <p class="form-err" id="edErr" role="alert" hidden></p>
+      <div class="dlg-actions">
+        <button type="button" class="btn danger" id="edDelete" hidden>Delete</button>
+        <span class="grow"></span>
+        <button type="button" class="btn ghost" id="edCancel">Cancel</button>
+        <button type="submit" class="btn primary" id="edSave">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="nameDlg" aria-labelledby="nmTitle">
+    <form method="dialog" id="nameForm">
+      <h2 id="nmTitle">Your display name</h2>
+      <p class="muted">Shown on records you add or edit, so teammates can see who changed what.</p>
+      <label>Name<input id="nameInput" maxlength="24" autocomplete="nickname" required></label>
+      <div class="dlg-actions"><span class="grow"></span><button class="btn primary" type="submit">Save</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="keyDlg" aria-labelledby="kyTitle">
+    <form method="dialog" id="keyForm">
+      <h2 id="kyTitle">Edit key required</h2>
+      <p class="muted">This dashboard is shared publicly. Enter the edit key from the person who started the server to make changes. Viewing never needs a key.</p>
+      <label>Edit key<input id="keyInput" type="password" autocomplete="off" required></label>
+      <div class="dlg-actions"><span class="grow"></span><button type="button" class="btn ghost" id="keyCancel">Cancel</button><button class="btn primary" type="submit">Unlock</button></div>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/seed.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
